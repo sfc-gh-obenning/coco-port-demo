@@ -171,7 +171,9 @@ SECTION 5 - Validate Registered Model:
 - Test the registered model by calling MODEL(PORT_AI_DEMO.PORT_OPS.CONGESTION_PREDICTOR, V1)!PREDICT() on sample data from the test set
 - Compare the registered model's predictions with the in-memory predictions to confirm they match
 
-Make the notebook well-documented with markdown cells explaining each section."""
+Make the notebook well-documented with markdown cells explaining each section.
+
+Do NOT run the notebook — just create it. We will run it in the next step."""
 
 render_prompt("Prompt 4.4", "Create ML Pipeline Notebook", PROMPT_4_4)
 
