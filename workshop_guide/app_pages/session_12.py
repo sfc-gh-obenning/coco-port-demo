@@ -1,203 +1,185 @@
 import streamlit as st
-from components import render_session_header, render_prompt, render_explanation, render_technologies_used, render_key_concepts, render_domain_glossary, render_what_you_built
+from components import render_session_header, render_prompt, render_explanation, render_technologies_used, render_key_concepts, render_what_you_built
 
-render_session_header(12, "Building Agentic Systems with Cortex Agent API", "3:15 - 3:45 PM", "30 min", "Cortex Agent with Analyst + Search + custom tools")
+render_session_header(12, "Deploying AI Apps with Streamlit", "3:20 - 3:40 PM", "20 min", "3-page operations dashboard with chat interface")
 
 render_technologies_used([
-    {"name": "Cortex Agent (CREATE AGENT)", "description": "An orchestrating AI that plans tasks, selects tools (Analyst, Search, custom), executes them, reflects on results, and generates responses. Created as a first-class Snowflake object.", "icon": "smart_toy"},
-    {"name": "Tool Orchestration", "description": "The Agent automatically routes questions to the right tool: Cortex Analyst for structured data, Cortex Search for unstructured documents, custom UDFs for business logic.", "icon": "route"},
-    {"name": "Custom Tools (UDFs)", "description": "User-defined functions that extend Agent capabilities. The Agent can call any SQL UDF or stored procedure as a tool, enabling custom business logic, calculations, or external integrations.", "icon": "build"},
+    {"name": "Streamlit in Snowflake (SiS)", "description": "Deploy Python-based data apps directly within Snowflake. Apps run on container runtime with full Python package support, access data natively via Snowpark, and inherit Snowflake's security model.", "icon": "web"},
+    {"name": "Compute Pool", "description": "A managed pool of container nodes that powers SiS apps on the container runtime. Provides GPU/CPU resources, auto-scales, and supports any Python package from pip or conda.", "icon": "memory"},
+    {"name": "st.connection(\"snowflake\")", "description": "The Streamlit connection API for Snowflake on container runtime. Returns a connection object with a .session() method for Snowpark SQL, and a .cursor() method for raw queries. No credentials needed — inherits the logged-in user's session.", "icon": "terminal"},
 ])
 
 
-PROMPT_12_1 = """In PORT_AI_DEMO.PORT_OPS, create a Cortex Agent that port operations staff can use to ask questions about both structured data and unstructured documents.
+PROMPT_12_1 = """In PORT_AI_DEMO.PORT_OPS, create a Streamlit app called PORT_OPS_DASHBOARD that runs on the container runtime (not the legacy warehouse runtime).
 
-1. First, ensure we have both tools ready:
-   - Cortex Analyst semantic model at @PORT_AI_DEMO.PORT_OPS.SEMANTIC_MODELS/port_operations_model.yaml
-   - Cortex Search service: port_knowledge_search
+First, create a compute pool for the app:
+- Name: PORT_AI_COMPUTE_POOL
+- Use the CPU_X64_S instance family
+- Min and max nodes of 1
 
-2. Create the agent using SQL:
+Then create the Streamlit app on that compute pool with these 3 pages:
 
-CREATE OR REPLACE AGENT PORT_AI_DEMO.PORT_OPS.PORT_OPS_AGENT
-  MODEL = 'claude-3-5-sonnet'
-  TOOLS = (
-    PORT_AI_DEMO.PORT_OPS.port_knowledge_search,
-    @PORT_AI_DEMO.PORT_OPS.SEMANTIC_MODELS/port_operations_model.yaml
-  )
-  INSTRUCTIONS = 'You are the Port of Vancouver Operations Assistant. You help port staff, terminal operators, customs officers, and logistics coordinators with questions about:
-- Container shipping volumes, berth times, and cargo data (use the structured data tool)
-- Safety incidents, inspection reports, and marine safety documents (use the search tool)
-- Trade patterns and logistics coordination
+PAGE 1 - Operations Dashboard:
+- KPI cards at the top showing: Total TEUs this month, Active Vessels, Avg Wait Time (from TRUCK_QUEUE_TIMES), CBSA Clearance Rate (% cleared from CONTAINER_MANIFESTS)
+- A map of terminal locations (Deltaport, Vanterm, Centerm, Fraser Surrey) with markers sized by current TEU volume. Use st.pydeck_chart with a ScatterplotLayer — hardcode the terminal lat/lon coordinates for the Port of Vancouver area
+- A bar chart of TEU volume by terminal
+- A line chart showing daily container arrivals over the past 90 days
+- A table of the top 10 highest congestion risk scores from LIVE_CONGESTION_SCORES
 
-Always be specific with numbers and cite your sources. When discussing safety issues, emphasize preventive measures. Support both English and French queries as this is a Canadian federal port.
+PAGE 2 - Port Intelligence Chat:
+- A chat interface where users can type natural language questions
+- Uses SNOWFLAKE.CORTEX.COMPLETE() to answer questions with context from our data
+- Shows recent CBSA inspection summary stats in a sidebar
+- Has a dropdown to select which LLM model to use
 
-Key context: The Port of Vancouver is Canadas largest port, handling over $200B in annual trade. Key terminals include Deltaport, Vanterm, and Centerm for containers, and Roberts Bank for bulk cargo.'
-  SAMPLE_QUESTIONS = (
-    'What were the top incidents at Deltaport this year?',
-    'Show me total TEU volume by shipping line for Q4 2025',
-    'Are there any CBSA inspection reports with major discrepancies?',
-    'Quel est le volume total de conteneurs pour le terminal Centerm?'
-  );
+PAGE 3 - Safety & Compliance:
+- Summary cards: Total incidents this month, Critical incidents, Open investigations
+- A table of recent PORT_INCIDENT_LOGS with severity color coding
+- A pie chart of incidents by category
 
-Execute and show confirmation."""
+Important for container runtime:
+- First, create an External Access Integration that allows access to pypi.org and files.pythonhosted.org so the app can install pip packages. Create a network rule for these hosts, then an integration referencing it, and set EXTERNAL_ACCESS_INTEGRATIONS on the Streamlit app
+- Do NOT use ROOT_LOCATION — use versioned stage syntax (CREATE STREAMLIT ... FROM '@stage' with VERSION)
+- Write files to the stage using COPY INTO with a SELECT, for example: COPY INTO @stage/file.toml FROM (SELECT '...' AS content) OVERWRITE = TRUE
+- Include a pyproject.toml in the stage with this exact structure:
+  [project]
+  name = "port-operations-dashboard"
+  version = "1.0.0"
+  requires-python = ">=3.11"
+  dependencies = ["streamlit[snowflake]>=1.50.0", "pydeck", "plotly"]
+- Use st.connection("snowflake") for the Snowflake connection (not get_active_session)
 
-render_prompt("Prompt 12.1", "Create the Cortex Agent", PROMPT_12_1)
+Make it visually clean with st.columns for layout."""
 
-render_explanation("What this prompt does", """
-Creates a **Cortex Agent** - an AI orchestrator that combines multiple data tools:
-
-**CREATE AGENT anatomy**:
-
-- **MODEL**: The LLM used for orchestration (planning, reflection, response generation). `claude-3-5-sonnet` is recommended for its strong reasoning.
-
-- **TOOLS**: The capabilities the agent can use:
-  - **Cortex Search service** (`port_knowledge_search`): For searching unstructured documents
-  - **Semantic model** (YAML on stage): For generating SQL queries from natural language
-  - Custom UDFs/procedures can be added too
-
-- **INSTRUCTIONS**: System prompt that shapes the agent's behavior, tone, and priorities. Key elements:
-  - Role definition ("You are the Port of Vancouver Operations Assistant")
-  - Tool routing guidance ("use the structured data tool" for numbers)
-  - Behavioral guidelines (cite sources, emphasize safety)
-  - Bilingual support (English + French)
-
-- **SAMPLE_QUESTIONS**: Seed questions shown to users in the UI. Help users understand what the agent can do.
-
-**How the Agent orchestrates**:
-1. **Planning**: Receives user question, decides which tool(s) to use
-2. **Tool execution**: Calls Analyst (generates + runs SQL) or Search (retrieves documents)
-3. **Reflection**: Evaluates tool results - are they sufficient? Need another tool?
-4. **Response**: Synthesizes a natural language answer from tool outputs
-
-**Agent vs. RAG**: The RAG pattern in Session 8 was a single retrieve-then-generate pipeline. An Agent is smarter - it can decide to use Search, then Analyst, then Search again based on the question. It can also split complex questions into sub-tasks.
-""")
-
-
-PROMPT_12_2 = """Test our PORT_OPS_AGENT in PORT_AI_DEMO.PORT_OPS with a series of questions that exercise both tools. Run each as a separate agent interaction:
-
-1. Structured data query: "What are the busiest terminals by TEU count this year and which shipping lines dominate each terminal?"
-
-2. Unstructured search query: "Have there been any environmental incidents near Neptune Terminals? What was done about them?"
-
-3. Mixed query: "Which terminals have had both the highest cargo volume AND the most safety incidents? Is there a correlation?"
-
-4. Bilingual query: "Quels sont les principaux problemes de securite signales au port cette annee?"
-
-For each, show the agent's response and note which tools it chose to use."""
-
-render_prompt("Prompt 12.2", "Test the Agent with Mixed Queries", PROMPT_12_2)
+render_prompt("Prompt 12.1", "Create the Streamlit App", PROMPT_12_1)
 
 render_explanation("What this prompt does", """
-Tests the Agent's **tool selection and orchestration** across four question types:
+Creates a full **Streamlit in Snowflake (SiS)** application running on the **container runtime**:
 
-**Query 1 - Pure structured**: The Agent should route entirely to Cortex Analyst, which generates SQL with GROUP BY terminal and shipping line.
+**Container runtime vs warehouse runtime**:
+- **Container runtime** (current): Runs on a compute pool, supports any Python package, GPU access, and full pip/conda installs
+- **Warehouse runtime** (legacy): Limited to pre-installed packages, no custom dependencies
 
-**Query 2 - Pure unstructured**: The Agent should route to Cortex Search, searching for environmental incidents near Neptune Terminals.
-
-**Query 3 - Mixed (the real test)**: This requires BOTH tools:
-1. Analyst: Get cargo volume by terminal (SQL)
-2. Search: Find safety incidents by terminal (document retrieval)
-3. Combine: Compare the two datasets and analyze correlation
-
-The Agent should split this into sub-tasks and use both tools.
-
-**Query 4 - Bilingual**: Tests French language handling. The Agent should understand French, route to appropriate tools (which operate on English data), and respond in French.
-
-**What to observe**:
-- The Agent emits **thinking events** showing its reasoning
-- You can see which tools were called and in what order
-- The response synthesizes data from potentially multiple tool calls
-- Responses include citations (doc_ids from Search, SQL results from Analyst)
-""")
-
-
-PROMPT_12_3 = """In PORT_AI_DEMO.PORT_OPS, enhance our agent by adding a custom tool. 
-
-1. Create a UDF that calculates estimated port congestion risk:
-
-CREATE OR REPLACE FUNCTION PORT_AI_DEMO.PORT_OPS.CALCULATE_CONGESTION_RISK(
-    terminal_name VARCHAR,
-    teu_count NUMBER,
-    arrival_month NUMBER
-)
-RETURNS VARIANT
-LANGUAGE SQL
-AS
-$$
-    SELECT OBJECT_CONSTRUCT(
-        'terminal', terminal_name,
-        'teu_count', teu_count,
-        'risk_score', 
-            CASE 
-                WHEN arrival_month IN (10,11,12) AND teu_count > 1000 THEN 'HIGH'
-                WHEN arrival_month IN (10,11,12) OR teu_count > 1000 THEN 'MEDIUM'
-                ELSE 'LOW'
-            END,
-        'recommendation',
-            CASE 
-                WHEN arrival_month IN (10,11,12) AND teu_count > 1000 THEN 'Pre-allocate additional berth slots and crane resources'
-                WHEN arrival_month IN (10,11,12) OR teu_count > 1000 THEN 'Monitor queue times and prepare standby resources'
-                ELSE 'Standard operations'
-            END
-    )
-$$;
-
-2. Test the UDF with sample inputs.
-
-3. Create an updated agent that includes this custom tool alongside the existing tools.
-
-Execute all SQL and test the updated agent with: "What is the congestion risk for a 2000 TEU shipment arriving at Deltaport in November?\""""
-
-render_prompt("Prompt 12.3", "Agent with Custom Tool", PROMPT_12_3)
-
-render_explanation("What this prompt does", """
-Extends the Agent with a **custom UDF tool**:
-
-**Custom tools** allow Agents to go beyond Search and Analyst:
-- Business calculations (congestion risk scoring)
-- External API calls (via external access integrations)
-- Data transformations (formatting, currency conversion)
-- Workflow triggers (creating tickets, sending notifications)
-
-**The UDF** implements a simple rule-based congestion risk calculator. In production, this could call our ML model instead.
-
-**Adding the UDF to the Agent**:
+**Step 1 - Create a compute pool**:
 ```sql
-CREATE OR REPLACE AGENT PORT_OPS_AGENT
-  MODEL = 'claude-3-5-sonnet'
-  TOOLS = (
-    port_knowledge_search,
-    @SEMANTIC_MODELS/port_operations_model.yaml,
-    CALCULATE_CONGESTION_RISK  -- Custom tool added
-  )
-  INSTRUCTIONS = '...'
+CREATE COMPUTE POOL PORT_AI_COMPUTE_POOL
+  MIN_NODES = 1
+  MAX_NODES = 1
+  INSTANCE_FAMILY = CPU_X64_S;
 ```
 
-**How the Agent uses custom tools**: When the user asks about congestion risk, the Agent:
-1. Recognizes this matches the CALCULATE_CONGESTION_RISK function
-2. Extracts parameters from the question (terminal=Deltaport, TEU=2000, month=November)
-3. Calls the UDF with those parameters
-4. Incorporates the result into its response
+**Step 2 - Create an External Access Integration** so the container can reach PyPI to install pip packages:
+```sql
+CREATE OR REPLACE NETWORK RULE pypi_network_rule
+  MODE = EGRESS
+  TYPE = HOST_PORT
+  VALUE_LIST = ('pypi.org', 'files.pythonhosted.org');
 
-**This is the "agentic" pattern**: The Agent doesn't just retrieve data - it takes actions, calls functions, and orchestrates workflows. Custom tools are what make Agents truly powerful for enterprise use cases.
+CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION pypi_access_integration
+  ALLOWED_NETWORK_RULES = (pypi_network_rule)
+  ENABLED = TRUE;
+```
+Then reference it on the Streamlit app with `EXTERNAL_ACCESS_INTEGRATIONS = (pypi_access_integration)`.
+
+**Step 3 - Write files to the stage** using `COPY INTO` with a SELECT (most reliable in Cortex Code):
+```sql
+COPY INTO @PORT_AI_DEMO.PORT_OPS.STREAMLIT_STAGE/pyproject.toml
+FROM (SELECT '[project]
+name = "port-operations-dashboard"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = ["streamlit[snowflake]>=1.50.0", "pydeck", "plotly"]
+' AS content)
+OVERWRITE = TRUE;
+```
+
+**Step 4 - Deploy with versioned stage syntax** (container runtime does not support ROOT_LOCATION):
+```sql
+CREATE OR REPLACE STREAMLIT PORT_AI_DEMO.PORT_OPS.PORT_OPS_DASHBOARD
+  FROM '@PORT_AI_DEMO.PORT_OPS.STREAMLIT_STAGE'
+  MAIN_FILE = 'streamlit_app.py'
+  COMPUTE_POOL = PORT_AI_COMPUTE_POOL
+  EXTERNAL_ACCESS_INTEGRATIONS = (pypi_access_integration);
+```
+
+**Page 1 - Operations Dashboard** pattern:
+```python
+conn = st.connection("snowflake")
+session = conn.session()
+
+col1, col2, col3, col4 = st.columns(4)
+teu_df = session.sql("SELECT SUM(teu_count) FROM CONTAINER_MANIFESTS WHERE ...").collect()
+col1.metric("Total TEUs", f"{teu_df[0][0]:,.0f}")
+```
+
+**Page 2 - Chat interface** uses `st.chat_input` and `st.chat_message` with Cortex LLM functions.
+
+**Page 3 - Safety dashboard** with conditional severity styling.
+
+**Key SiS advantages**:
+- **No data movement**: App runs inside Snowflake, queries data directly
+- **Security**: Inherits the user's role and permissions (including masking policies from Session 3)
+- **Sharing**: Grant USAGE on the streamlit to share with other roles
+- **No infrastructure**: Compute pool auto-manages scaling and lifecycle
+""")
+
+
+PROMPT_12_2 = """Show me the SQL to verify the Streamlit app and compute pool were created:
+
+1. SHOW COMPUTE POOLS;
+2. SHOW STREAMLITS IN SCHEMA PORT_AI_DEMO.PORT_OPS;
+3. Describe the streamlit PORT_OPS_DASHBOARD;
+
+Also provide me with the direct URL to open the Streamlit app in Snowsight."""
+
+render_prompt("Prompt 12.2", "Test the Streamlit App", PROMPT_12_2)
+
+render_explanation("What this prompt does", """
+Verification and access:
+
+**SHOW COMPUTE POOLS** lists compute pools with:
+- Name, state (ACTIVE/SUSPENDED), instance family
+- Min/max nodes, current node count
+- Auto-suspend and auto-resume settings
+
+**SHOW STREAMLITS** lists all Streamlit apps in the schema with:
+- Name, database, schema
+- URL endpoint
+- Creation date, owner role
+
+**DESCRIBE STREAMLIT** shows:
+- Main file location
+- Root stage location
+- Compute pool assigned (not warehouse — this confirms container runtime)
+- Current status
+
+**Accessing the app**: SiS apps are accessible via Snowsight at:
+```
+https://app.snowflake.com/<account>/#/streamlit-apps/PORT_AI_DEMO.PORT_OPS.PORT_OPS_DASHBOARD
+```
+
+**Sharing the app**:
+```sql
+GRANT USAGE ON STREAMLIT PORT_OPS_DASHBOARD TO ROLE PORT_ANALYST;
+```
+
+Now the PORT_ANALYST role can access the dashboard - but they'll see masked financial data (from Session 3's masking policies) and won't have access to CBSA reports. The app automatically respects row-level and column-level security.
 """)
 
 
 render_key_concepts([
-    {"term": "Cortex Agent", "definition": "A first-class Snowflake object that orchestrates LLMs, Cortex Analyst, Cortex Search, and custom tools to answer complex questions. Supports planning, tool use, reflection, and multi-turn conversations via threads."},
-    {"term": "Tool Routing", "definition": "The Agent's ability to select the appropriate tool for each question or sub-task. Structured data queries -> Analyst, unstructured search -> Search, calculations -> custom UDFs. The LLM decides routing based on the question and tool descriptions."},
-    {"term": "Agent Threads", "definition": "Persistent conversation contexts that maintain history across multiple interactions. A thread allows the Agent to reference previous questions and answers, enabling follow-up questions and contextual conversations."},
-    {"term": "Custom Tools", "definition": "SQL UDFs or stored procedures registered as Agent tools. The Agent can call them with extracted parameters. Enables custom business logic, external integrations, and workflow automation within the Agent framework."},
-])
-
-render_domain_glossary([
-    {"term": "Port Operations Staff", "definition": "Includes terminal operators (manage cranes and berths), vessel traffic controllers (manage ship movements), logistics coordinators (manage rail and truck connections), and customs officers (CBSA clearances). The Agent serves all these personas."},
-    {"term": "Congestion Risk Assessment", "definition": "The custom UDF (CALCULATE_CONGESTION_RISK) models a simplified version of how port planners assess risk: high TEU count + peak season = high risk. Real systems use ML models and dozens of variables."},
+    {"term": "Container Runtime", "definition": "The current SiS execution environment. Apps run on a compute pool (managed container nodes) instead of a warehouse. Supports any Python package via pip/conda, GPU access, and higher resource limits. Uses versioned stage syntax (FROM '@stage') instead of the legacy ROOT_LOCATION."},
+    {"term": "Compute Pool", "definition": "A managed pool of container nodes (CREATE COMPUTE POOL). You choose an instance family (CPU_X64_S, GPU_NV_S, etc.), set min/max nodes for auto-scaling, and Snowflake handles provisioning. Multiple Streamlit apps and services can share the same pool."},
+    {"term": "pyproject.toml", "definition": "Required configuration file for container runtime SiS apps. Uses the [project] section with name, version, requires-python, and dependencies list. Must include streamlit[snowflake] and any other pip packages. Upload to the stage alongside the app code."},
+    {"term": "Streamlit in Snowflake (SiS)", "definition": "Snowflake's native app framework for building Python data apps. Apps run on Snowflake compute, access data via Snowpark, and inherit Snowflake's security model. Deployed as first-class Snowflake objects with RBAC."},
+    {"term": "st.connection(\"snowflake\")", "definition": "The Streamlit connection API for container runtime SiS apps. Call .session() for a Snowpark session or .cursor() for a raw DB-API cursor. Replaces the legacy get_active_session() pattern used in warehouse runtime."},
+    {"term": "External Access Integration", "definition": "Required for container runtime apps that install pip packages. Container nodes cannot reach the internet by default — you must create a network rule allowing egress to pypi.org and files.pythonhosted.org, then wrap it in an External Access Integration and attach it to the Streamlit app."},
 ])
 
 render_what_you_built([
-    "PORT_OPS_AGENT - Cortex Agent with Analyst + Search tools",
-    "Tested structured, unstructured, mixed, and bilingual queries",
-    "CALCULATE_CONGESTION_RISK UDF as a custom tool",
-    "Enhanced agent with three tool types (Analyst + Search + custom)",
+    "PORT_AI_COMPUTE_POOL - compute pool for container runtime apps",
+    "PORT_OPS_DASHBOARD - 3-page Streamlit app on container runtime",
+    "Operations Dashboard with KPIs, charts, and congestion scores",
+    "AI-powered chat interface with model selection",
+    "Safety & Compliance page with incident tracking",
 ])

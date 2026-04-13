@@ -27,6 +27,7 @@ page = st.navigation(
     {
         "": [
             st.Page("app_pages/home.py", title="Home", icon=":material/home:"),
+            st.Page("app_pages/getting_started.py", title="Getting Started", icon=":material/rocket_launch:"),
             st.Page("app_pages/agenda.py", title="Agenda", icon=":material/calendar_today:"),
         ],
         "Morning Block 1": [
@@ -45,11 +46,11 @@ page = st.navigation(
             st.Page("app_pages/session_09.py", title=_title(9, "Vector Embeddings"), icon=":material/scatter_plot:"),
         ],
         "Afternoon Block 2": [
-            st.Page("app_pages/session_10.py", title=_title(10, "Cortex Analyst"), icon=":material/chat:"),
-            st.Page("app_pages/session_11.py", title=_title(11, "Semantic Models"), icon=":material/auto_fix_high:"),
-            st.Page("app_pages/session_12.py", title=_title(12, "Cortex Agents"), icon=":material/smart_toy:"),
-            st.Page("app_pages/session_13.py", title=_title(13, "Streamlit Apps"), icon=":material/web:"),
-            st.Page("app_pages/session_14.py", title=_title(14, "Observability & Cost"), icon=":material/monitoring:"),
+            st.Page("app_pages/session_10.py", title=_title(10, "Cortex Analyst & Semantic Views"), icon=":material/chat:"),
+            st.Page("app_pages/session_11.py", title=_title(11, "Cortex Agents"), icon=":material/smart_toy:"),
+            st.Page("app_pages/session_12.py", title=_title(12, "Streamlit Apps"), icon=":material/web:"),
+            st.Page("app_pages/session_13.py", title=_title(13, "Observability & Cost"), icon=":material/monitoring:"),
+            st.Page("app_pages/session_14.py", title=_title(14, "Free-form Exploration"), icon=":material/explore:"),
         ],
     },
     position="sidebar",

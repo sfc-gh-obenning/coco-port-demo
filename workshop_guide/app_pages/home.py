@@ -8,7 +8,7 @@ st.space("small")
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Annual trade", "$200B+", help="Port of Vancouver annual trade value")
 col2.metric("Sessions", "14", help="Hands-on lab sessions")
-col3.metric("Prompts", "33", help="Total Cortex Code prompts")
+col3.metric("Prompts", "40", help="Total Cortex Code prompts")
 col4.metric("Duration", "~6 hrs", help="Total hands-on content time")
 
 st.space("medium")
@@ -48,8 +48,8 @@ st.space("small")
 st.markdown("#### Prerequisites")
 with st.container(border=True):
     st.markdown("""
-- Snowflake account with **ACCOUNTADMIN** role (or equivalent privileges)
-- **Cortex Code** installed and connected to your account
+- Snowflake account with **ACCOUNTADMIN** role — see **Getting Started** in the sidebar to provision a free trial
+- **Cortex Code** open in Snowsight and connected to your account
 - Cross-region inference enabled (for Cortex LLM functions)
 """)
 

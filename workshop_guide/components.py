@@ -4,17 +4,16 @@ SESSION_PROMPTS = {
     1: ["Prompt 1.1", "Prompt 1.2"],
     2: ["Prompt 2.1", "Prompt 2.2", "Prompt 2.3", "Prompt 2.4"],
     3: ["Prompt 3.1", "Prompt 3.2", "Prompt 3.3"],
-    4: ["Prompt 4.1", "Prompt 4.2", "Prompt 4.3"],
+    4: ["Prompt 4.1", "Prompt 4.2", "Prompt 4.3", "Prompt 4.4", "Prompt 4.5"],
     5: ["Prompt 5.1", "Prompt 5.2"],
     6: ["Prompt 6.1", "Prompt 6.2", "Prompt 6.3"],
     7: ["Prompt 7.1", "Prompt 7.2", "Prompt 7.3"],
     8: ["Prompt 8.1", "Prompt 8.2", "Prompt 8.3"],
     9: ["Prompt 9.1", "Prompt 9.2"],
-    10: ["Prompt 10.1", "Prompt 10.2", "Prompt 10.3"],
-    11: ["Prompt 11.1", "Prompt 11.2"],
-    12: ["Prompt 12.1", "Prompt 12.2", "Prompt 12.3"],
-    13: ["Prompt 13.1", "Prompt 13.2"],
-    14: ["Prompt 14.1", "Prompt 14.2", "Prompt 14.3"],
+    10: ["Prompt 10.1", "Prompt 10.2", "Prompt 10.3", "Prompt 10.4"],
+    11: ["Prompt 11.1", "Prompt 11.2", "Prompt 11.3", "Prompt 11.4"],
+    12: ["Prompt 12.1", "Prompt 12.2"],
+    13: ["Prompt 13.1", "Prompt 13.2", "Prompt 13.3"],
 }
 
 

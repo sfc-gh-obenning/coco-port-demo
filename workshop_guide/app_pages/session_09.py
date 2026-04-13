@@ -12,19 +12,39 @@ render_technologies_used([
 
 PROMPT_9_1 = """In PORT_AI_DEMO.PORT_OPS:
 
-1. Generate vector embeddings for 10 sample texts from different port domain areas using SNOWFLAKE.CORTEX.EMBED_TEXT_1024('snowflake-arctic-embed-l-v2.0', text):
+1. Generate vector embeddings for 18 sample texts using SNOWFLAKE.CORTEX.EMBED_TEXT_1024('snowflake-arctic-embed-l-v2.0', text). Include deliberately similar pairs so we can see high cosine similarity scores:
+
+   Weather delays (similar pair):
    - 'Container ship delayed due to heavy fog in Burrard Inlet'
+   - 'Vessel arrival postponed because of dense fog conditions in Burrard Inlet'
+
+   Equipment failures (similar pair):
    - 'Crane malfunction at Deltaport Terminal berth 3'
-   - 'Grain shipment temperature exceeded safe threshold'
-   - 'CBSA inspection found undeclared electronics in container'
+   - 'Gantry crane mechanical failure reported at Deltaport berth 3'
+
+   Environmental incidents (similar pair):
    - 'Oil sheen detected near Neptune Terminals'
-   - 'Truck queue time at Deltaport exceeded 3 hours'
+   - 'Petroleum slick observed on water surface adjacent to Neptune Terminals'
+
+   Customs inspections (similar pair):
+   - 'CBSA inspection found undeclared electronics in container'
+   - 'Canada Border Services Agency discovered unreported electronic goods during container examination'
+
+   Rail logistics (similar pair):
    - 'CN Rail intermodal train delayed due to track maintenance near Kamloops'
+   - 'CN intermodal freight train held up by rail track repairs in the Kamloops area'
+
+   Dissimilar texts (no close match to the above):
+   - 'Grain shipment temperature exceeded safe threshold'
+   - 'Truck queue time at Deltaport exceeded 3 hours'
    - 'Cruise ship Princess Marguerite arriving Canada Place'
    - 'Container vessel MSC Rosaria requesting emergency berth allocation'
    - 'Potash export shipment scheduled for Roberts Bank terminal'
+   - 'New collective bargaining agreement ratified by ILWU Local 514'
+   - 'Quarterly safety drill conducted across all Burrard Inlet terminals'
+   - 'Annual dredging of Second Narrows shipping channel completed'
 
-2. Store these in a table called EMBEDDING_EXAMPLES with columns: text_id, text_content, embedding (VECTOR(FLOAT, 1024)), category (weather, equipment, safety, customs, environmental, logistics, rail, cruise, operations, export)
+2. Store these in a table called EMBEDDING_EXAMPLES with columns: text_id, text_content, embedding (VECTOR(FLOAT, 1024)), category (weather, equipment, environmental, customs, rail, safety, logistics, cruise, operations, export, labour, maintenance)
 
 3. Then compute the cosine similarity between ALL pairs and show the top 10 most similar pairs and the top 5 least similar pairs using VECTOR_COSINE_SIMILARITY().
 
@@ -61,15 +81,21 @@ ORDER BY similarity DESC
 LIMIT 10;
 ```
 
-**Expected high-similarity pairs**:
-- Weather delay + rail delay (both about delays)
-- Container ship + vessel berth allocation (both about ships docking)
-- Crane malfunction + truck queue (both about terminal operations)
+**Expected high-similarity pairs** (these are the deliberately paired texts):
+- Fog delay pair (~0.95+): "Container ship delayed due to heavy fog..." vs "Vessel arrival postponed because of dense fog..."
+- Crane failure pair (~0.93+): "Crane malfunction at Deltaport..." vs "Gantry crane mechanical failure..."
+- Oil spill pair (~0.94+): "Oil sheen detected..." vs "Petroleum slick observed..."
+- Customs pair (~0.90+): "CBSA inspection found undeclared electronics..." vs "Canada Border Services Agency discovered unreported electronic goods..."
+- Rail delay pair (~0.95+): "CN Rail intermodal train delayed..." vs "CN intermodal freight train held up..."
+
+**Expected moderate-similarity pairs**:
+- Cross-category matches like fog delay + rail delay (both about transport delays, ~0.6-0.7)
 
 **Expected low-similarity pairs**:
-- Cruise ship arrival + CBSA customs inspection (completely different domains)
+- "New collective bargaining agreement ratified..." vs "Oil sheen detected..." (~0.3 or lower)
+- Cruise ship arrival vs annual dredging (completely different domains)
 
-This exercise demonstrates that embeddings capture **semantic relationships**, not just lexical overlap.
+This exercise demonstrates that embeddings capture **semantic relationships**, not just lexical overlap. Paraphrased sentences score nearly as high as identical text.
 """)
 
 
@@ -139,7 +165,7 @@ render_domain_glossary([
 ])
 
 render_what_you_built([
-    "EMBEDDING_EXAMPLES table with 10 domain-specific embeddings",
+    "EMBEDDING_EXAMPLES table with 18 domain-specific embeddings",
     "Pairwise similarity matrix showing semantic relationships",
     "INCIDENT_EMBEDDINGS table for all incident logs",
     "Custom semantic search implementation from scratch",

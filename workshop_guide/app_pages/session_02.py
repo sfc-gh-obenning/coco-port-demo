@@ -70,7 +70,7 @@ This creates four **time-series tables** representing IoT and operational sensor
 
 - **CONTAINER_GPS_TRACKING**: Simulates AIS (Automatic Identification System) data and inland tracking. The coordinates cover the real geographic area from the Strait of Georgia through Burrard Inlet to inland distribution centers.
 
-- **CRANE_UTILIZATION**: Operational metrics from ship-to-shore (STS) gantry cranes. Moves-per-hour is a key KPI - top ports achieve 30+ moves/hour. We'll use this in Session 11 for semantic modeling.
+- **CRANE_UTILIZATION**: Operational metrics from ship-to-shore (STS) gantry cranes. Moves-per-hour is a key KPI - top ports achieve 30+ moves/hour. We'll use this in Session 10 when expanding our semantic view.
 
 - **TRUCK_QUEUE_TIMES**: Gate metrics at Deltaport, which is one of the most congested container terminals in North America. Truck queues directly impact supply chain costs.
 
