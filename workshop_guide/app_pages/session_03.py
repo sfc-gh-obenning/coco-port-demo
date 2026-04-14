@@ -25,7 +25,7 @@ PROMPT_3_1 = """In PORT_AI_DEMO, create the following roles and grant structure 
    - PORT_ANALYST: SELECT on CONTAINER_MANIFESTS, CARGO_INVOICES, RAIL_SCHEDULES, TERMINALS, VESSELS, TRADE_PARTNERS (no access to CBSA reports or incident logs)
    - PORT_CUSTOMS_OFFICER: SELECT on CBSA_INSPECTION_REPORTS, CONTAINER_MANIFESTS, BILLS_OF_LADING_TEXT only
 
-3. Grant all roles to my current user (OBENNING) so I can test them.
+3. Grant all roles to my current user so I can test them.
 
 Execute all the SQL and show me a summary of what was granted."""
 
